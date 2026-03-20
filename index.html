@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>救助37期體測成績紀錄</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f4; margin: 0; padding: 10px; }
+        .container { width: 100%; background: white; border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background-color: #f57c00; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 20px; position: sticky; left: 0; }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+        
+        .name-col { font-weight: bold; background-color: #fff3e0; position: sticky; left: 0; z-index: 5; border-right: 2px solid #f57c00; }
+        
+        input { width: 70px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        input:focus { border-color: #f57c00; outline: none; background-color: #fff9f0; }
+
+        .term-select { margin: 15px; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #f57c00; }
+        
+        .footer { padding: 20px; text-align: center; position: sticky; left: 0; }
+        button { background-color: #f57c00; color: white; padding: 15px 40px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold; width: 100%; max-width: 300px; }
+        button:hover { background-color: #e66e00; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">救助37期 - 體能測驗數據輸入表</div>
+    
+    <form id="fitnessForm">
+        <div style="text-align: center; position: sticky; left: 0;">
+            <label style="font-weight: bold;">測驗階段：</label>
+            <select name="term" class="term-select" id="termSelect">
+                <option value="middle">期中測驗 (Middle Term)</option>
+                <option value="end">期末測驗 (End Term)</option>
+            </select>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="name-col">姓名</th>
+                    <th>立定跳遠</th>
+                    <th>後拋擲遠</th>
+                    <th>折返跑</th>
+                    <th>菱形槓</th>
+                    <th>懸吊屈體</th>
+                    <th>屈臂懸垂</th>
+                    <th>負重行走</th>
+                    <th>1500m</th>
+                </tr>
+            </thead>
+            <tbody id="studentTable">
+                <!-- 這裡會由 JS 自動生成 35 位學員 -->
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <button type="button" onclick="submitAllData()">批次提交所有成績</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const students = ["沈晉嘉", "林胤昇", "邱立旻", "蔡承育", "李金道", "何亞駿", "陳耀鈞", "陳亮瑜", "高寶琳", "李健賓", "林敬庭", "陳致誠", "鄭光庭", "林冠庭", "蔡濟行", "梁錦鴻", "張力元", "張喆菡", "鍾明哲", "康景程", "胡倍誠", "劉羽宸", "王崇瑋", "周政霖", "王新仁", "謝季儒", "楊美玲", "黃建融", "洪子恩", "黎益動", "曾記評", "朱耀政", "陳秉軒", "謝益正", "劉芝廷"];
+
+    const tbody = document.getElementById('studentTable');
+    students.forEach((name, index) => {
+        const row = `
+            <tr>
+                <td class="name-col">${name}<input type="hidden" name="name_${index}" value="${name}"></td>
+                <td><input type="number" step="0.1" name="long_jump_${index}"></td>
+                <td><input type="number" step="0.1" name="back_throw_${index}"></td>
+                <td><input type="number" step="0.1" name="shuttle_run_${index}"></td>
+                <td><input type="number" step="0.1" name="hex_bar_${index}"></td>
+                <td><input type="number" name="leg_tuck_${index}"></td>
+                <td><input type="number" step="0.1" name="arm_hang_${index}"></td>
+                <td><input type="number" step="0.1" name="carry_${index}"></td>
+                <td><input type="text" name="run_1500_${index}" placeholder="06:30"></td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+
+    async function submitAllData() {
+        const scriptUrl = 'YOUR_SCRIPT_URL_HERE'; // 貼上你的 Google Script URL
+        const term = document.getElementById('termSelect').value;
+        const btn = document.querySelector('button');
+        btn.innerText = "提交中...";
+        btn.disabled = true;
+
+        // 這裡會循環每一行，將有填寫資料的學員送出
+        for (let i = 0; i < students.length; i++) {
+            const formData = new URLSearchParams();
+            const name = students[i];
+            const lj = document.getElementsByName(`long_jump_${i}`)[0].value;
+            
+            // 如果該行有填寫數據（以跳遠為判斷基準，或可自訂）才送出
+            if (lj !== "") {
+                formData.append('term', term);
+                formData.append('name', name);
+                formData.append('long_jump', lj);
+                formData.append('back_throw', document.getElementsByName(`back_throw_${i}`)[0].value);
+                formData.append('shuttle_run', document.getElementsByName(`shuttle_run_${i}`)[0].value);
+                formData.append('hex_bar', document.getElementsByName(`hex_bar_${i}`)[0].value);
+                formData.append('leg_tuck', document.getElementsByName(`leg_tuck_${i}`)[0].value);
+                formData.append('arm_hang', document.getElementsByName(`arm_hang_${i}`)[0].value);
+                formData.append('carry', document.getElementsByName(`carry_${i}`)[0].value);
+                formData.append('run_1500', document.getElementsByName(`run_1500_${i}`)[0].value);
+
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors'
+                });
+            }
+        }
+        alert("資料已上傳完畢！");
+        btn.innerText = "批次提交所有成績";
+        btn.disabled = false;
+    }
+</script>
+
+</body>
+</html>
