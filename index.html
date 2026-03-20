@@ -8,13 +8,20 @@
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f4f4f4; margin: 0; padding: 10px; }
         .container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header { background-color: #f57c00; color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; left: 0; z-index: 20; }
+        
+        .term-selector { padding: 15px; text-align: center; background: #fff9f0; border-bottom: 1px solid #ddd; position: sticky; left: 0; }
+        select { padding: 8px 15px; font-size: 16px; border-radius: 5px; border: 1px solid #f57c00; cursor: pointer; }
+
         table { width: 100%; border-collapse: collapse; min-width: 1500px; font-size: 13px; }
         th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
         th { background-color: #fff3e0; position: sticky; top: 0; z-index: 10; }
+        
         .name-col { font-weight: bold; background-color: #fff; position: sticky; left: 0; z-index: 5; border-right: 2px solid #f57c00; min-width: 80px; }
         .sub-head { font-size: 11px; color: #666; background-color: #fff9f0; }
+        
         input { width: 45px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; text-align: center; font-size: 14px; }
         input:focus { border-color: #f57c00; outline: none; background-color: #fff9f0; }
+
         .footer { padding: 20px; text-align: center; position: sticky; left: 0; }
         button { background-color: #f57c00; color: white; padding: 15px 50px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
@@ -25,6 +32,15 @@
 <div class="container">
     <div class="header">救助37期體測 - 原始成績登錄</div>
     
+    <!-- 選單功能：對應 Google Sheet 的分頁名稱 -->
+    <div class="term-selector">
+        <label style="font-weight:bold;">選擇存入的工作表：</label>
+        <select id="sheetNameSelect">
+            <option value="期中測驗">期中測驗</option>
+            <option value="期末測驗">期末測驗</option>
+        </select>
+    </div>
+
     <table>
         <thead>
             <tr>
@@ -45,20 +61,20 @@
                 <th>1</th><th>2</th>
             </tr>
         </thead>
-        <tbody id="studentTable"></tbody>
+        <tbody id="studentTable">
+            <!-- JavaScript 會在此生成學員名單 -->
+        </tbody>
     </table>
 
     <div class="footer">
-        <button type="button" id="submitBtn" onclick="submitData()">提交所有成績至 Google Sheet</button>
-        <p id="statusMsg" style="color: #f57c00; font-weight: bold; margin-top: 10px; display: none;">傳送中，請稍候...</p>
+        <button type="button" id="submitBtn" onclick="submitData()">確認提交至 Google Sheet</button>
+        <p id="statusMsg" style="color: #f57c00; font-weight: bold; margin-top: 10px; display: none;">傳送中，請勿關閉視窗...</p>
     </div>
 </div>
 
 <script>
-    // --- 在這裡設定這次是什麼測驗 (例如: 期中測驗 / 期末測驗) ---
-    const currentTerm = "期中測驗";
-    // --- 把你的 GAS 網址貼在下面 ---
-    const scriptUrl = 'YOUR_GAS_URL_HERE'; 
+    // 請將下方的 URL 換成你部署後的 GAS 網址
+    const scriptUrl = 'YOUR_GAS_DEPLOYMENT_URL';
 
     const students = ["沈晉嘉", "林胤昇", "邱立旻", "蔡承育", "李金道", "何亞駿", "陳耀鈞", "陳亮瑜", "高寶琳", "李健賓", "林敬庭", "陳致誠", "鄭光庭", "林冠庭", "蔡濟行", "梁錦鴻", "張力元", "張喆菡", "鍾明哲", "康景程", "胡倍誠", "劉羽宸", "王崇瑋", "周政霖", "王新仁", "謝季儒", "楊美玲", "黃建融", "洪子恩", "黎益動", "曾記評", "朱耀政", "陳秉軒", "謝益正", "劉芝廷"];
 
@@ -79,10 +95,13 @@
     });
 
     async function submitData() {
+        const selectedSheet = document.getElementById('sheetNameSelect').value;
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('statusMsg');
         const rows = document.querySelectorAll('#studentTable tr');
         
+        if (!confirm(`確定要將資料上傳至「${selectedSheet}」工作表嗎？`)) return;
+
         btn.disabled = true;
         status.style.display = "block";
 
@@ -93,7 +112,7 @@
             if (hasData) {
                 const name = row.getAttribute('data-name');
                 const params = new URLSearchParams({
-                    term: currentTerm, // 自動帶入上面設定的變數
+                    sheetName: selectedSheet, // 這裡會傳送 "期中測驗" 或 "期末測驗"
                     name: name,
                     lj1: row.querySelector('.lj1').value, lj2: row.querySelector('.lj2').value, lj3: row.querySelector('.lj3').value,
                     bt1: row.querySelector('.bt1').value, bt2: row.querySelector('.bt2').value, bt3: row.querySelector('.bt3').value,
@@ -107,12 +126,12 @@
                 try {
                     await fetch(scriptUrl, { method: 'POST', body: params, mode: 'no-cors' });
                 } catch (e) {
-                    console.error(name + " 傳送失敗");
+                    console.error(name + " 傳送失敗", e);
                 }
             }
         }
         
-        alert("資料上傳完成！");
+        alert("上傳完成！請至 Google Sheet 確認。");
         btn.disabled = false;
         status.style.display = "none";
     }
